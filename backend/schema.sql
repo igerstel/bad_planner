@@ -22,3 +22,5 @@ CREATE TABLE IF NOT EXISTS events (
  (user_id WITH =, int4range(start_minute, end_minute, '[)') WITH &&)
  DEFERRABLE INITIALLY DEFERRED
 );
+
+ALTER TABLE events ADD COLUMN IF NOT EXISTS locked boolean NOT NULL DEFAULT false;

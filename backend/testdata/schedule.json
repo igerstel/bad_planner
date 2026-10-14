@@ -1,0 +1,557 @@
+[
+  {
+    "name": "exact drop",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 630,
+      "end": 690,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        630,
+        690
+      ],
+      "B": [
+        690,
+        750
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "drop skips lock",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "L",
+        "name": "L",
+        "start": 660,
+        "end": 720,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 630,
+      "end": 690,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        720,
+        780
+      ],
+      "L": [
+        660,
+        720
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "push skips lock",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      },
+      {
+        "id": "L",
+        "name": "L",
+        "start": 660,
+        "end": 720,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 540,
+      "end": 630,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        540,
+        630
+      ],
+      "B": [
+        720,
+        780
+      ],
+      "L": [
+        660,
+        720
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "resize into lock",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      },
+      {
+        "id": "L",
+        "name": "L",
+        "start": 660,
+        "end": 720,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 600,
+      "end": 675,
+      "locked": false
+    },
+    "want": {},
+    "error": true
+  },
+  {
+    "name": "locked direct timing",
+    "events": [
+      {
+        "id": "L",
+        "name": "L",
+        "start": 660,
+        "end": 720,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "L",
+      "name": "L",
+      "start": 675,
+      "end": 735,
+      "locked": false
+    },
+    "want": {},
+    "error": true
+  },
+  {
+    "name": "lock toggle no shifts",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 540,
+      "end": 600,
+      "locked": true
+    },
+    "want": {
+      "A": [
+        540,
+        600
+      ],
+      "B": [
+        600,
+        660
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "upward resize skips lock",
+    "events": [
+      {
+        "id": "B",
+        "name": "B",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      },
+      {
+        "id": "L",
+        "name": "L",
+        "start": 570,
+        "end": 600,
+        "locked": true
+      },
+      {
+        "id": "A",
+        "name": "A",
+        "start": 660,
+        "end": 720,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 630,
+      "end": 720,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        630,
+        720
+      ],
+      "B": [
+        510,
+        570
+      ],
+      "L": [
+        570,
+        600
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "both ends expand",
+    "events": [
+      {
+        "id": "B",
+        "name": "B",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "A",
+        "name": "A",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      },
+      {
+        "id": "C",
+        "name": "C",
+        "start": 660,
+        "end": 720,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 585,
+      "end": 690,
+      "locked": false
+    },
+    "want": {
+      "B": [
+        525,
+        585
+      ],
+      "A": [
+        585,
+        690
+      ],
+      "C": [
+        690,
+        750
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "move fallback",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 1200,
+        "end": 1260,
+        "locked": false
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "start": 1380,
+        "end": 1440,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 1380,
+      "end": 1440,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        1380,
+        1440
+      ],
+      "B": [
+        1320,
+        1380
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "anchor fallback around lock",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 1200,
+        "end": 1260,
+        "locked": false
+      },
+      {
+        "id": "L",
+        "name": "L",
+        "start": 1380,
+        "end": 1440,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 1380,
+      "end": 1440,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        1320,
+        1380
+      ],
+      "L": [
+        1380,
+        1440
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "no room",
+    "events": [
+      {
+        "id": "L",
+        "name": "L",
+        "start": 0,
+        "end": 1440,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "N",
+      "name": "N",
+      "start": 540,
+      "end": 600,
+      "locked": false
+    },
+    "want": {},
+    "error": true
+  },
+  {
+    "name": "gap absorbs cascade",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      },
+      {
+        "id": "C",
+        "name": "C",
+        "start": 720,
+        "end": 780,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 540,
+      "end": 615,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        540,
+        615
+      ],
+      "B": [
+        615,
+        675
+      ],
+      "C": [
+        720,
+        780
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "shortening leaves gaps",
+    "events": [
+      {
+        "id": "A",
+        "name": "A",
+        "start": 540,
+        "end": 600,
+        "locked": false
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "start": 600,
+        "end": 660,
+        "locked": false
+      }
+    ],
+    "edited": {
+      "id": "A",
+      "name": "A",
+      "start": 540,
+      "end": 585,
+      "locked": false
+    },
+    "want": {
+      "A": [
+        540,
+        585
+      ],
+      "B": [
+        600,
+        660
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "new event skips lock",
+    "events": [
+      {
+        "id": "L",
+        "name": "L",
+        "start": 660,
+        "end": 720,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "N",
+      "name": "N",
+      "start": 645,
+      "end": 690,
+      "locked": false
+    },
+    "want": {
+      "L": [
+        660,
+        720
+      ],
+      "N": [
+        720,
+        765
+      ]
+    },
+    "error": false
+  },
+  {
+    "name": "adjacent locks",
+    "events": [
+      {
+        "id": "L1",
+        "name": "L1",
+        "start": 600,
+        "end": 660,
+        "locked": true
+      },
+      {
+        "id": "L2",
+        "name": "L2",
+        "start": 660,
+        "end": 720,
+        "locked": true
+      }
+    ],
+    "edited": {
+      "id": "N",
+      "name": "N",
+      "start": 615,
+      "end": 675,
+      "locked": false
+    },
+    "want": {
+      "L1": [
+        600,
+        660
+      ],
+      "L2": [
+        660,
+        720
+      ],
+      "N": [
+        720,
+        780
+      ]
+    },
+    "error": false
+  }
+]

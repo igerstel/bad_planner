@@ -1,6 +1,6 @@
 # bad_planner
 
-A flexible daily planner built with Go, PostgreSQL, React and TypeScript. Drag an event, and conflicting events make room. A daily routine repeats every day.
+A flexible daily planner built with Go, PostgreSQL, React and TypeScript. Drag an event, and conflicting events make room. V1 stores one persistent day with no date or timezone concepts.
 
 ## Run locally
 
@@ -11,25 +11,33 @@ createdb planner_dev
 make install
 ```
 
-In two terminals:
+Start both servers in one terminal:
 
 ```sh
-make dev-api
+make dev
 ```
 
-```sh
-make dev-web
-```
+API and web logs have `[api]` / `[web]` prefixes. Ctrl+C stops both servers. If either server fails, the other stops too. React changes reload automatically; restart `make dev` after changing Go code. Separate `make dev-api` and `make dev-web` commands remain available.
 
 Open http://localhost:5173. Create an account or try the clearly labelled interactive demo. Demo data stays in memory and is never saved.
 
 Backend defaults to `postgres://localhost/planner_dev?sslmode=disable`. Override `DATABASE_URL` for password-based connections. Environment variables are read from the process; `.env` files are not automatically loaded. See `.env.example`.
 
-If using the workspace-local compiler downloaded during development:
+### If your terminal says `command not found: go`
+
+Install Go on macOS with Homebrew:
 
 ```sh
-make dev-api GO="$PWD/.tools/go/bin/go"
+brew install go
 ```
+
+Reopen the VS Code terminal, then verify:
+
+```sh
+go version
+```
+
+The Makefile uses Go from your PATH, falling back to `.tools/go/bin/go` if the workspace-local compiler is present. That local compiler is ignored by Git and is not included when cloning the repository. It lets `make dev` run in the original workspace without a system install, but does not make the bare `go` command available in your shell. Override the compiler with `make dev GO=/absolute/path/to/go` if needed.
 
 ## Build and serve
 
@@ -45,7 +53,9 @@ For production set `DATABASE_URL` to a TLS-enabled connection to **planner**, `A
 
 ## Scheduling rules
 
-Only overlapping events shift, preserving duration and order. Dragging prefers shifting down and can fall back upward if the bottom is full. Editing only a start backward bumps collisions up; extending the end pushes them down. Edits that cannot fit within the day are rejected atomically. Shortening or deleting leaves useful gaps.
+Moves preserve duration, push collisions later, and skip locked events. When later placement cannot fit, try earlier space. New events use the same rules. A lock icon fixes an event's timing until unlocked; locked events also have a different background.
+
+Resizing keeps exact requested bounds: earlier starts bump preceding events up, later ends push following events down. Displaced events skip locks without splitting or shortening. A resize cannot cross a lock. Dialogs preview adjusted placement and the full cascade before saving. Impossible edits leave the entire schedule unchanged. No Undo in v1.
 
 Use the left handle to drag (or press ↑/↓), the right buttons to change duration by 15 minutes, and the event body to edit name and times. Use “Show all 24 hours” for events outside the default daytime view.
 
@@ -53,6 +63,6 @@ Each edit sends only that event; the backend calculates and saves all resulting 
 
 ## Verification
 
-`make check` type-checks and builds the frontend and runs Go vet. BE and FE unit suites are intentionally deferred until after v1. The implementation plan includes the proposed cases.
+`make check` runs shared scheduling fixtures, type-checks and builds the frontend, and runs Go tests and vet. The Go scheduling suite covers 15 agreed cases using shared fixtures in `backend/testdata/schedule.json`. Run `cd backend && go test ./...`. Run `npm run check:schedule --prefix web` to verify the frontend resolver against the same fixtures; broader BE/FE suites remain follow-up work. The implementation plan includes the proposed cases.
 
 Stack references: [React TypeScript](https://react.dev/learn/typescript), [pgx transactions](https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool).

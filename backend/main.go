@@ -129,7 +129,7 @@ func (a *app) auth(w http.ResponseWriter, r *http.Request) {
 	reply(w, 200, map[string]string{"email": input.Email})
 }
 func loadEvents(ctx context.Context, tx pgx.Tx, id string) ([]Event, error) {
-	rows, err := tx.Query(ctx, "SELECT id,name,start_minute,end_minute FROM events WHERE user_id=$1 ORDER BY start_minute", id)
+	rows, err := tx.Query(ctx, "SELECT id,name,start_minute,end_minute,locked FROM events WHERE user_id=$1 ORDER BY start_minute", id)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func loadEvents(ctx context.Context, tx pgx.Tx, id string) ([]Event, error) {
 	result := []Event{}
 	for rows.Next() {
 		var e Event
-		if err = rows.Scan(&e.ID, &e.Name, &e.Start, &e.End); err != nil {
+		if err = rows.Scan(&e.ID, &e.Name, &e.Start, &e.End, &e.Locked); err != nil {
 			return nil, err
 		}
 		result = append(result, e)
@@ -197,14 +197,12 @@ func (a *app) events(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		edited.Name = strings.TrimSpace(edited.Name)
-		upward := false
 		found := false
 		if r.Method == "PUT" {
 			edited.ID = eventID
 			for _, e := range events {
 				if e.ID == eventID {
 					found = true
-					upward = edited.Start < e.Start && edited.End == e.End
 				}
 			}
 			if !found {
@@ -218,18 +216,14 @@ func (a *app) events(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		resolved, resolveErr := arrange(events, edited, upward)
-		// Dragging prefers downward shifts; fall back upward when the bottom is full.
-		if resolveErr != nil && !upward && r.Header.Get("X-Edit-Intent") == "move" {
-			resolved, resolveErr = arrange(events, edited, true)
-		}
+		resolved, resolveErr := resolve(events, edited)
 		if resolveErr != nil {
 			fail(w, 422, resolveErr.Error())
 			return
 		}
 		for _, e := range resolved {
-			_, err = tx.Exec(ctx, `INSERT INTO events(id,user_id,name,start_minute,end_minute) VALUES($1,$2,$3,$4,$5)
-    ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,start_minute=EXCLUDED.start_minute,end_minute=EXCLUDED.end_minute WHERE events.user_id=EXCLUDED.user_id`, e.ID, id, e.Name, e.Start, e.End)
+			_, err = tx.Exec(ctx, `INSERT INTO events(id,user_id,name,start_minute,end_minute,locked) VALUES($1,$2,$3,$4,$5,$6)
+    ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,start_minute=EXCLUDED.start_minute,end_minute=EXCLUDED.end_minute,locked=EXCLUDED.locked WHERE events.user_id=EXCLUDED.user_id`, e.ID, id, e.Name, e.Start, e.End, e.Locked)
 			if err != nil {
 				break
 			}

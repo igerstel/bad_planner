@@ -16,6 +16,8 @@ import {
   Leaf,
   LoaderCircle,
   LogOut,
+  LockKeyhole,
+  LockKeyholeOpen,
   Minus,
   Plus,
   Repeat2,
@@ -23,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 
-type Event = { id: string; name: string; start: number; end: number };
+import { resolve, preview, type Event } from "./schedule";
 type Schedule = { events: Event[]; version: number };
 const time = (n: number) =>
   `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
@@ -76,40 +78,6 @@ async function api<T>(
       response.status,
     );
   return data;
-}
-// The client mirrors the cascade for preview only. Saved results always come from Go.
-function preview(events: Event[], edited: Event, up = false): Event[] | null {
-  const rest = events
-    .filter((e) => e.id !== edited.id)
-    .map((e) => ({ ...e }))
-    .sort((a, b) => a.start - b.start);
-  let cursor = up ? edited.start : edited.end;
-  for (const e of up ? [...rest].reverse() : rest) {
-    if (up) {
-      if (e.start >= edited.end) continue;
-      if (e.end > cursor) {
-        const d = e.end - e.start;
-        e.end = cursor;
-        e.start = cursor - d;
-      }
-      cursor = e.start;
-    } else {
-      if (e.end <= edited.start) continue;
-      if (e.start < cursor) {
-        const d = e.end - e.start;
-        e.start = cursor;
-        e.end = cursor + d;
-      }
-      cursor = e.end;
-    }
-  }
-  if (
-    rest.some((e) => e.start < 0 || e.end > 1440) ||
-    edited.start < 0 ||
-    edited.end > 1440
-  )
-    return null;
-  return [...rest, edited].sort((a, b) => a.start - b.start);
 }
 export default function App() {
   const [user, setUser] = useState<string | null>(null),
@@ -192,16 +160,7 @@ export default function App() {
             ...e,
             id: method === "POST" ? crypto.randomUUID() : e.id,
           };
-          const old = list.find((x) => x.id === e.id);
-          const up =
-            !!old && edited.start < old.start && edited.end === old.end;
-          const result =
-            preview(list, edited, up) ||
-            (intent === "move" ? preview(list, edited, true) : null);
-          if (!result)
-            throw new Error(
-              "There isn’t enough room in this day. Choose another time.",
-            );
+          const result = resolve(list, edited);
           list = result;
         }
         next = { events: list, version: schedule.version + 1 };
@@ -211,7 +170,7 @@ export default function App() {
           method,
           method === "DELETE"
             ? undefined
-            : { name: e.name, start: e.start, end: e.end },
+            : { name: e.name, start: e.start, end: e.end, locked: !!e.locked },
           schedule.version,
           intent,
         );
@@ -261,15 +220,20 @@ export default function App() {
     if (start === d.latest.start) return;
     d.latest = { ...d.event, start, end: start + d.event.end - d.event.start };
     d.moved = start !== d.event.start;
-    const result =
-      preview(schedule.events, d.latest) ||
-      preview(schedule.events, d.latest, true);
+    const result = preview(schedule.events, d.latest);
     d.valid = !!result;
-    setDragged(result);
-    setError(result ? "" : "There isn’t enough room at that time.");
+    setDragged(
+      result || [
+        ...schedule.events.filter((e) => e.id !== d.event.id),
+        d.latest,
+      ],
+    );
+    setError(
+      result ? "" : "No room for this event—shorten it or free some space.",
+    );
   }
   function startDrag(ev: PointerEvent<HTMLButtonElement>, event: Event) {
-    if (busy) return;
+    if (busy || event.locked) return;
     ev.preventDefault();
     ev.currentTarget.setPointerCapture(ev.pointerId);
     drag.current = {
@@ -381,7 +345,7 @@ export default function App() {
       <main inert={!!(auth || editing)}>
         <header className="topbar">
           <span>
-            <span className="dot" /> A fresh start, every day
+            <span className="dot" /> A little room to move
           </span>
           <div>
             {demo && (
@@ -478,7 +442,7 @@ export default function App() {
                 </span>
                 <div>
                   <strong>My everyday</strong>
-                  <span>Your repeating daily routine</span>
+                  <span>One persistent daily schedule</span>
                 </div>
               </div>
               <div>
@@ -500,7 +464,7 @@ export default function App() {
                 <div>
                   <h2>The everyday plan</h2>
                   <span>
-                    <Repeat2 size={13} /> Repeats daily
+                    <Repeat2 size={13} /> One saved day
                   </span>
                 </div>
                 <button
@@ -542,7 +506,7 @@ export default function App() {
                     .map((e) => (
                       <div
                         key={e.id}
-                        className={`event tone-${(schedule.events.findIndex((x) => x.id === e.id) + 6) % 4} ${drag.current?.event.id === e.id ? "dragging" : ""} ${e.end - e.start === 15 ? "short" : ""}`}
+                        className={`event tone-${(schedule.events.findIndex((x) => x.id === e.id) + 6) % 4} ${drag.current?.event.id === e.id ? "dragging" : ""} ${e.end - e.start === 15 ? "short" : ""} ${e.locked ? "is-locked" : ""} ${drag.current?.event.id === e.id && !drag.current.valid ? "invalid-drop" : ""}`}
                         style={{
                           top:
                             (Math.max(e.start, startHour * 60) -
@@ -558,8 +522,12 @@ export default function App() {
                         <button
                           className="grip"
                           aria-label={`Move ${e.name}; arrow keys move 15 minutes`}
-                          title="Drag to move · ↑ ↓ for 15-minute moves"
-                          disabled={busy}
+                          title={
+                            e.locked
+                              ? "Unlock before moving"
+                              : "Drag to move · ↑ ↓ for 15-minute moves"
+                          }
+                          disabled={busy || !!e.locked}
                           onPointerDown={(ev) => startDrag(ev, e)}
                           onPointerMove={moveDrag}
                           onPointerUp={endDrag}
@@ -601,10 +569,30 @@ export default function App() {
                         </button>
                         <div className="event-controls">
                           <button
+                            className="icon lock-toggle"
+                            aria-label={`${e.locked ? "Unlock" : "Lock"} ${e.name}`}
+                            aria-pressed={!!e.locked}
+                            title={
+                              e.locked ? "Unlock event" : "Lock event in place"
+                            }
+                            disabled={busy}
+                            onClick={() =>
+                              void mutate({ ...e, locked: !e.locked })
+                            }
+                          >
+                            {e.locked ? (
+                              <LockKeyhole size={14} />
+                            ) : (
+                              <LockKeyholeOpen size={14} />
+                            )}
+                          </button>
+                          <button
                             className="icon"
                             title="Shorten by 15 minutes"
                             aria-label={`Shorten ${e.name} by 15 minutes`}
-                            disabled={busy || e.end - e.start <= 15}
+                            disabled={
+                              busy || !!e.locked || e.end - e.start <= 15
+                            }
                             onClick={() =>
                               void mutate({ ...e, end: e.end - 15 })
                             }
@@ -615,7 +603,7 @@ export default function App() {
                             className="icon"
                             title="Extend by 15 minutes"
                             aria-label={`Extend ${e.name} by 15 minutes`}
-                            disabled={busy || e.end >= 1440}
+                            disabled={busy || !!e.locked || e.end >= 1440}
                             onClick={() =>
                               void mutate({ ...e, end: e.end + 15 })
                             }
@@ -688,6 +676,7 @@ export default function App() {
           event={editing}
           busy={busy}
           error={error}
+          events={schedule.events}
           onClose={() => {
             if (!busy) {
               setEditing(null);
@@ -856,6 +845,7 @@ function AuthDialog({
 }
 function EventDialog({
   event,
+  events,
   busy,
   error,
   onClose,
@@ -863,6 +853,7 @@ function EventDialog({
   onDelete,
 }: {
   event: Event;
+  events: Event[];
   busy: boolean;
   error: string;
   onClose: () => void;
@@ -873,6 +864,14 @@ function EventDialog({
     [confirmDelete, setConfirmDelete] = useState(false);
   const options = Array.from({ length: 97 }, (_, i) => i * 15);
   const valid = e.name.trim().length > 0 && e.end > e.start;
+  const proposed = valid ? preview(events, e) : null;
+  const placed = proposed?.find((x) => x.id === e.id);
+  const shifted =
+    proposed?.filter(
+      (x) =>
+        x.id !== e.id &&
+        events.some((old) => old.id === x.id && old.start !== x.start),
+    ) || [];
   return (
     <Modal onClose={onClose} label={e.id ? "Edit event" : "Add event"}>
       <button
@@ -905,6 +904,7 @@ function EventDialog({
           <label>
             Starts
             <select
+              disabled={busy || !!event.locked}
               value={e.start}
               onChange={(ev) => setE({ ...e, start: Number(ev.target.value) })}
             >
@@ -921,6 +921,7 @@ function EventDialog({
           <label>
             Ends
             <select
+              disabled={busy || !!event.locked}
               value={e.end}
               onChange={(ev) => setE({ ...e, end: Number(ev.target.value) })}
             >
@@ -934,6 +935,36 @@ function EventDialog({
             </select>
           </label>
         </div>
+        {event.locked && (
+          <p className="locked-note">
+            <LockKeyhole size={14} /> Timing is locked. Unlock from the calendar
+            to change it.
+          </p>
+        )}
+        {valid && !proposed && (
+          <p className="form-error" role="alert">
+            This edit cannot fit without crossing a lock or the day boundary.
+          </p>
+        )}
+        {placed && (
+          <div className="placement-preview" role="status">
+            <strong>
+              Will save at {label(placed.start)} – {label(placed.end)}
+            </strong>
+            {(placed.start !== e.start || placed.end !== e.end) && (
+              <p>Adjusted around locked events or to fit this day.</p>
+            )}
+            {shifted.length > 0 && (
+              <ul>
+                {shifted.map((x) => (
+                  <li key={x.id}>
+                    {x.name}: {label(x.start)} – {label(x.end)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <div className="shift-note">
           <Clock3 size={18} />
           <span>
@@ -975,7 +1006,7 @@ function EventDialog({
           >
             Cancel
           </button>
-          <button className="primary" disabled={!valid || busy}>
+          <button className="primary" disabled={!valid || !proposed || busy}>
             {busy ? (
               <LoaderCircle size={16} className="spin" />
             ) : (

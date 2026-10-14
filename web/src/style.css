@@ -981,3 +981,41 @@ h1 > span {
     display: inline-grid;
   }
 }
+
+.event.is-locked {
+  background: #deded5;
+  border-color: #c8cabb;
+  border-left-color: #75816a;
+  color: #515a49;
+}
+.event.invalid-drop {
+  outline: 2px solid #b26451;
+  background: #f6e4de;
+}
+.event.is-locked .grip {
+  cursor: not-allowed;
+}
+.event.short .lock-toggle {
+  height: 19px;
+}
+.locked-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.placement-preview {
+  margin-top: 18px;
+  background: #eef2e7;
+  padding: 12px;
+  border-radius: 7px;
+  font-size: 11px;
+  color: #526344;
+}
+.placement-preview p {
+  margin: 6px 0;
+}
+.placement-preview ul {
+  padding-left: 18px;
+  margin: 8px 0 0;
+  line-height: 1.8;
+}

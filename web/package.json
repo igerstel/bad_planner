@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:schedule": "tsc src/schedule.ts --target ES2022 --module commonjs --skipLibCheck --outDir ../.tools/schedule-check && node ../tools/check-schedule.cjs"
   },
   "dependencies": {
     "react": "^19.1.1",
